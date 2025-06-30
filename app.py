@@ -36,12 +36,9 @@ def get_category(category: str) -> List[Dict[str, str]]:
 
 @app.get('/categories/pick')
 def pick() -> Dict[str, str]:
-    print(f'{request.args=}')
     cats = request.args.getlist('categories')
-    print(f'{cats=}')
     interest = {*tiers[tiers.index(request.args.get('interest', 'low')):]}
     effort = {*tiers[:tiers.index(request.args.get('effort', 'low'))+1]}
-    print(f'{interest=} {effort=}')
 
     options: List[Option] = []
     for c in cats:
@@ -73,7 +70,6 @@ def pick_item(options: List[Option]):
 @app.get('/categories/<string:category>/remove/<string:name>')
 def remove(category, name: str) -> Tuple[Dict[str, Dict[str, str]], int]:
     name = name.replace('+', ' ')
-    print(f'{category=} {name=}')
     if category not in db or name not in (indices := {d['name']: i for i, d
                                           in enumerate(db[category])}):
         return db, 404
