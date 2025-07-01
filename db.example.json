@@ -1,0 +1,32 @@
+[
+  {
+    "name": "shows",
+    "choices": [
+      {
+        "name": "the simpsons",
+        "interest": "medium",
+        "effort": "low"
+      }
+    ]
+  },
+  {
+    "name": "games",
+    "choices": [
+      {
+        "name": "Borderlands 3",
+        "interest": "low",
+        "effort": "medium"
+      },
+      {
+        "name": "halo",
+        "interest": "medium",
+        "effort": "low"
+      },
+      {
+        "name": "Battle Front II",
+        "interest": "high",
+        "effort": "medium"
+      }
+    ]
+  }
+]
