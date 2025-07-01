@@ -16,7 +16,7 @@ CORS(app)
 tiers = ['low', 'medium', 'high']
 weights = dict(zip(tiers, [1, 3, 6]))
 with open('db.json') as in_:
-    db = json.load(in_)['categories']
+    db = {e['name']: e['choices'] for e in json.load(in_)}
 
 
 @app.get('/')
