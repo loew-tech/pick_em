@@ -51,6 +51,9 @@ def pick() -> Dict[str, str]:
             wght = max(1, weights[d['interest']] // weights[d['effort']])
             options.append(Option(name=d['name'], start=start, weight=wght,
                                   category=c))
+    if not options:
+        return {'selection': 'NO ITEMS FOUND MATCHING CRITERIA',
+                'category': 'NOT FOUND'}
     selection = pick_item(options)
     return {'selection': selection.name, 'category': selection.category}
 
