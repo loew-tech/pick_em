@@ -30,8 +30,10 @@ def categories() -> List[str]:
 
 
 @app.get('/categories/<string:category>')
-def get_category(category: str) -> List[Dict[str, str]]:
-    return db[category]
+def get_category(category: str) -> Dict[str, str | Dict[str, str]]:
+    if category not in db:
+        return {'name': category, 'choices': []}
+    return {'name': category, 'choices': db[category]}
 
 
 @app.get('/categories/pick')
