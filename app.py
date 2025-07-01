@@ -7,7 +7,7 @@ from flask import Flask, request
 from flask_cors import CORS
 
 
-Option = namedtuple('Option', ['name', 'start', 'weight'])
+Option = namedtuple('Option', ['name', 'start', 'weight', 'category'])
 
 app = Flask(__name__)
 CORS(app)
@@ -41,7 +41,6 @@ def pick() -> Dict[str, str]:
     cats = request.args.getlist('categories')
     interest = {*tiers[tiers.index(request.args.get('interest', 'low')):]}
     effort = {*tiers[:tiers.index(request.args.get('effort', 'low'))+1]}
-
     options: List[Option] = []
     for c in cats:
         for d in db[c]:
@@ -50,26 +49,28 @@ def pick() -> Dict[str, str]:
             start = options[-1].start + options[-1].weight if options else 0
             # @TODO: is this how I want to handle interest < effort
             wght = max(1, weights[d['interest']] // weights[d['effort']])
-            options.append(Option(name=d['name'], start=start, weight=wght))
-    return {'selection': pick_item(options)}
+            options.append(Option(name=d['name'], start=start, weight=wght,
+                                  category=c))
+    selection = pick_item(options)
+    return {'selection': selection.name, 'category': selection.category}
 
 
-def pick_item(options: List[Option]):
+def pick_item(options: List[Option]) -> Option:
     start, stop = 0, len(options) - 1
-    selection = randint(start, options[-1].start + options[-1].weight)
+    selection = randint(start, options[-1].start + options[-1].weight-1)
     while start <= stop:
         mid = (start + stop) // 2
         end = options[mid].start + options[mid].weight
-        if options[mid].start <= selection <= end:
-            return options[mid].name
-        elif end < selection:
+        if options[mid].start <= selection < end:
+            return options[mid]
+        elif end <= selection:
             start = mid + 1
         else:
             stop = mid - 1
-    return ''
+    return Option(name='NOT FOUND', start=-1, weight=-1, category='NOT FOUND')
 
 
-@app.get('/categories/<string:category>/remove/<string:name>')
+@app.delete('/categories/<string:category>/remove/<string:name>')
 def remove(category, name: str) -> Tuple[Dict[str, Dict[str, str]], int]:
     name = name.replace('+', ' ')
     if category not in db or name not in (indices := {d['name']: i for i, d
