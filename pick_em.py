@@ -82,7 +82,7 @@ def pick_item(options: List[Option]) -> Option:
 
 
 @app.delete('/categories/<string:category>/remove/<string:name>')
-def remove(category, name: str) -> dict[str, str]:
+def remove(category, name: str) -> tuple[dict, int] | dict[str, str]:
     name = name.replace('+', ' ')
     indices = {d['name']: i for i, d in enumerate(db.get(category, []))}
     if name not in indices:
@@ -95,7 +95,7 @@ def remove(category, name: str) -> dict[str, str]:
 
 
 @app.put('/categories/<string:category>/edit/<string:name>')
-def edit(category, name: str):
+def edit(category, name: str) -> tuple[dict[str, str], int]:
     name = name.replace('+', ' ')
     item = next(filter(lambda d: d[NAME] == name, db[category]), None)
     if item is None:
@@ -106,11 +106,22 @@ def edit(category, name: str):
     return {'msg': f'successfully updated {name} in {category}'}, 202
 
 
+@app.post('/categories/<string:category>/add/<string:name>')
+def add_category(category, name) -> tuple[dict[str, str], int]:
+    name = name.replace('+', ' ')
+    item = {NAME: name, **request.json}
+    choices = db.get(category, [])
+    choices.append(item)
+    db[category] = choices
+    dump_db()
+    return {'msg': f'successfully added {name} to {category}'}, 202
+
+
 def dump_db():
     with open('db.json', 'w') as out:
         json.dump([{"name": name_, "choices": choices} for
                    name_, choices in db.items()], out,
-                  indent=4)
+                  indent=2)
 
 
 if __name__ == '__main__':
