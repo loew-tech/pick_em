@@ -16,6 +16,9 @@ weights = dict(zip(tiers, [1, 3, 6]))
 with open('db.json') as in_:
     db = {e['name']: e['choices'] for e in json.load(in_)}
 
+NAME = "name"
+INTEREST = 'interest'
+EFFORT = 'effort'
 
 @app.get('/')
 def index():
@@ -78,7 +81,7 @@ def pick_item(options: List[Option]) -> Option:
 
 
 @app.delete('/categories/<string:category>/remove/<string:name>')
-def remove(category, name: str) -> Tuple[Dict[str, Dict[str, str]], int]:
+def remove(category, name: str) -> dict[str, str]:
     name = name.replace('+', ' ')
     indices = {d['name']: i for i, d in enumerate(db.get(category, []))}
     if name not in indices:
@@ -86,13 +89,27 @@ def remove(category, name: str) -> Tuple[Dict[str, Dict[str, str]], int]:
     del db[category][indices[name]]
     if not db[category]:
         del db[category]
+    dump_db()
+    return {'msg': f'successfully removed {name} from {category}'}
 
+
+@app.put('/categories/<string:category>/edit/<string:name>')
+def edit(category, name: str):
+    name = name.replace('+', ' ')
+    item = next(filter(lambda d: d[NAME] == name, db[category]), None)
+    if item is None:
+        return {"msg": f'name {name} not found in {category}'}, 404
+    item[INTEREST] = request.json.get(INTEREST, item[INTEREST])
+    item[EFFORT] = request.json.get(EFFORT, item[EFFORT])
+    dump_db()
+    return {'msg': f'successfully updated {name} in {category}'}, 202
+
+
+def dump_db():
     with open('db.json', 'w') as out:
         json.dump({'categories': [{"name": name_, "choices": choices} for
                                   name_, choices in db.items()]}, out,
                   indent=4)
-
-    return db, 202
 
 
 if __name__ == '__main__':
