@@ -20,6 +20,7 @@ NAME = "name"
 INTEREST = 'interest'
 EFFORT = 'effort'
 
+
 @app.get('/')
 def index():
     return '<div>Hello World</div>'
@@ -107,8 +108,8 @@ def edit(category, name: str):
 
 def dump_db():
     with open('db.json', 'w') as out:
-        json.dump({'categories': [{"name": name_, "choices": choices} for
-                                  name_, choices in db.items()]}, out,
+        json.dump([{"name": name_, "choices": choices} for
+                   name_, choices in db.items()], out,
                   indent=4)
 
 
