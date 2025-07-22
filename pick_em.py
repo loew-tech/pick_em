@@ -107,7 +107,11 @@ def edit(category, name: str) -> tuple[dict[str, str], int]:
 
 
 @app.post('/categories/<string:category>/add/<string:name>')
-def add_category(category, name) -> tuple[dict[str, str], int]:
+def add_category(category, name: str) -> tuple[dict[str, str], int]:
+    if not category or not name:
+        return {'msg': '"category" and "name" must be provided'}, 400
+    if INTEREST not in request.json or EFFORT not in request.json:
+        return {'msg': 'fields "interest" and "effort" are required'}, 400
     name = name.replace('+', ' ')
     item = {NAME: name, **request.json}
     choices = db.get(category, [])
