@@ -44,27 +44,34 @@ def pick() -> Union[Dict[str, str], Response]:
     i = request.args.get('interest', 'low')
     e = request.args.get('effort', 'low')
     if not cats or i not in tiers or e not in tiers:
-        return make_response(jsonify(error="Invalid interest or effort tier"),
-                             400)
-    interest = {*tiers[tiers.index(i):]}
-    effort = {*tiers[:tiers.index(e) + 1]}
-    options: List[Option] = []
-    for c in cats:
-        for d in db.get(c, []):
-            if not (d['interest'] in interest and d['effort'] in effort):
-                continue
-            start = options[-1].start + options[-1].weight if options else 0
-            # @TODO: is this how I want to handle interest < effort
-            wght = max(1, weights[d['interest']] // weights[d['effort']])
-            options.append(Option(name=d['name'], start=start, weight=wght,
-                                  category=c))
-    if not options:
+        return make_response(jsonify(error="Invalid interest or effort "
+                                           "selection"), 400)
+
+    if not (options := get_options(i, e, cats)):
         return {'selection': 'NO ITEMS FOUND MATCHING CRITERIA',
                 'category': 'NOT FOUND'}
     selection = pick_item(options)
     app.logger.info(f'Picked {selection.name} from {selection.category}')
     return {'selection': selection.name, 'category': selection.category}
 
+
+def get_options(interest, effort: str, cats: List[str]) -> List[Option]:
+    i = {*tiers[tiers.index(interest):]}
+    e = {*tiers[:tiers.index(effort) + 1]}
+    options: List[Option] = []
+    print(f'{i=} {e=} {cats=}')
+    for c in cats:
+        print(f'\t{c=} {db.get(c, [])=}')
+        for d in db.get(c, []):
+            print(f'\t\t{d=} {d["interest"]=} {d["effort"]=}')
+            if not (d['interest'] in i and d['effort'] in e):
+                continue
+            start = options[-1].start + options[-1].weight if options else 0
+            # @TODO: is this how I want to handle interest < effort
+            wght = max(1, weights[d['interest']] // weights[d['effort']])
+            options.append(Option(name=d['name'], start=start, weight=wght,
+                                  category=c))
+    return options
 
 def pick_item(options: List[Option]) -> Option:
     start, stop = 0, len(options) - 1
