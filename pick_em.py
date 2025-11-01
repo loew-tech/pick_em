@@ -20,6 +20,10 @@ NAME = "name"
 INTEREST = 'interest'
 EFFORT = 'effort'
 
+CATEGORY = 'category'
+CATEGORIES = 'categories'
+OPTION = 'option'
+
 
 @app.get('/')
 def index():
@@ -72,6 +76,7 @@ def get_options(interest, effort: str, cats: List[str]) -> List[Option]:
             options.append(Option(name=d['name'], start=start, weight=wght,
                                   category=c))
     return options
+
 
 def pick_item(options: List[Option]) -> Option:
     start, stop = 0, len(options) - 1
@@ -126,6 +131,51 @@ def add_category(category, name: str) -> tuple[dict[str, str], int]:
     db[category] = choices
     dump_db()
     return {'msg': f'successfully added {name} to {category}'}, 202
+
+
+# @TODO: change "bulk_add" to "add" once old func is deprecated
+@app.post('/categories/bulk_add')
+def bulk_add_to_category() -> Tuple[dict[str, str], int]:
+    if type(request.json) is not list:
+        return {'msg': 'list of "category" "option" pairs must be provided in '
+                       'body'}, 400
+
+    warnings = _bulk_add_options(request.json)
+
+    if len(warnings) == len(request.json):
+        return {'msg': 'failed to add any options', 'warnings': warnings}, 422
+    if warnings:
+        return {'msg': 'added some choices with failures',
+                'warnings': warnings}, 207
+    return {'msg': 'successfully added all options'}, 200
+
+
+def _bulk_add_options(options: List[Dict]) -> List[str]:
+    warnings = []
+    for obj in options:
+        if (cat := obj.get(CATEGORY)) is None or (option := obj.get(OPTION)) \
+                is None:
+            warnings.append(f'failed to add {obj}. Missing category or '
+                            f'option')
+            continue
+        if NAME not in option or INTEREST not in option or EFFORT not in \
+                option:
+            warnings.append('failed to add to category {cat} Invalid option. '
+                            'Missing name, interest, or effort')
+            continue
+
+        if cat not in db:
+            db[cat] = [option]
+            continue
+
+        if (existing_option := [i for i, opt in enumerate(db[cat]) if
+                                opt[NAME] == option[NAME]]):
+            db[cat][existing_option.pop()] = option
+            continue
+
+        db[cat].append(option)
+    dump_db()
+    return warnings
 
 
 def dump_db():
